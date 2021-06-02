@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\GradeLevels;
+use App\Http\Resources\Schools;
 use App\Models\GradeLevel;
 use App\Models\School;
 use App\Models\SchoolType;
@@ -19,12 +21,14 @@ class ListsController extends Controller
     {
         // optionally return schools in a given year
         if ($year) {
-            return School::where('school_year', '=', $year)->get();
+            $schools = School::where('school_year', '=', $year)->get();
+        } else {
+            $currentYear = $this->getCurrentSchoolYear();
+            $schools = School::where('school_year', '=', $currentYear)->get();
         }
 
-        $currentYear = $this->getCurrentSchoolYear();
+        return response(['schools' => new Schools($schools)]);
 
-        return School::where('school_year', '=', $currentYear)->get();
     }
 
     /**
@@ -35,24 +39,30 @@ class ListsController extends Controller
      */
     public function getSchoolById($id)
     {
-        return School::findOrFail($id)
-            ->toArray();
+        return response(['school' => new Schools(
+            School::where('id', $id)
+            ->get()
+        )]);
     }
 
 
     public function getSchoolYears()
     {
-        return SchoolYear::select('school_year', 'display')
+        return response(['schoolYears' => new \App\Http\Resources\SchoolYear(
+            SchoolYear::select('school_year', 'display')
             ->orderBy('school_year')
-            ->get();
+            ->get()
+        )]);
     }
 
     public function getGradeLevels($year)
     {
-        return GradeLevel::select('id', 'grade_level_name')
+        return response(['gradeLevels' => new GradeLevels(
+            GradeLevel::select('id', 'grade_level_name')
             ->where('school_year', '=', $year)
             ->orderBy('display_order')
-            ->get();
+            ->get()
+        )]);
     }
 
     public function getSchoolTypes($year)
